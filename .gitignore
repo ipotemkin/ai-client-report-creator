@@ -1,0 +1,41 @@
+# Виртуальное окружение
+venv/
+.venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Тесты и линтеры
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Секреты и локальная конфигурация
+.env
+.env.local
+
+# Сгенерированные PDF (каталог в репозитории оставляем)
+reports/*.pdf
+
+# ОС и IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Логи
+*.log
+
+# Project files
+etc/
