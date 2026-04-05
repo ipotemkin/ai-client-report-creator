@@ -1,20 +1,20 @@
-"""Генерация PDF из HTML через Jinja2 и WeasyPrint."""
+"""Генерация PDF отчёта по диалогу (Jinja2 + WeasyPrint)."""
 
 import asyncio
 from datetime import datetime
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from loguru import logger
-from weasyprint import HTML
 
-from utils.models import ReportData
+from src.models import ReportData
+from src.pdf.render import (
+    directory_base_url,
+    jinja_env,
+    project_root,
+    write_pdf,
+)
 
 _TEMPLATE_NAME: str = "report_template.html"
-
-
-def _project_root() -> Path:
-    return Path(__file__).resolve().parent.parent
 
 
 def _make_output_filename(now: datetime) -> str:
@@ -38,10 +38,7 @@ def _render_html(
     generated_at: datetime,
 ) -> str:
     logger.info("Шаг: подстановка данных в шаблон {}", _TEMPLATE_NAME)
-    env: Environment = Environment(
-        loader=FileSystemLoader(str(templates_dir)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = jinja_env(templates_dir)
     template = env.get_template(_TEMPLATE_NAME)
     gen_label: str = _generation_date_label(generated_at)
     theses: list[str] = _non_empty_lines(data.dialog_theses)
@@ -60,8 +57,8 @@ def _render_html(
 def _write_pdf_sync(html_string: str, output_path: Path) -> None:
     logger.info("Шаг: конвертация HTML → PDF (WeasyPrint)")
     logger.debug("Размер HTML: {} символов", len(html_string))
-    html_doc: HTML = HTML(string=html_string, base_url=str(_project_root()))
-    html_doc.write_pdf(target=str(output_path))
+    base: str = directory_base_url(project_root())
+    write_pdf(html_string, output_path, base)
     logger.info("Файл PDF записан: {}", output_path.resolve())
 
 
@@ -78,7 +75,7 @@ async def generate_report_pdf(
     filename: str = _make_output_filename(moment)
     output_path: Path = reports_dir / filename
     logger.info("Целевой файл PDF: {}", output_path.name)
-    templates_dir: Path = _project_root() / "templates"
+    templates_dir: Path = project_root() / "templates"
     html_string: str = _render_html(data, templates_dir, moment)
     await asyncio.to_thread(_write_pdf_sync, html_string, output_path)
     return output_path

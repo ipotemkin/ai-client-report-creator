@@ -11,11 +11,11 @@ from loguru import logger
 from openai import OpenAIError
 from pydantic import ValidationError
 
-from utils.card_ai import fetch_card_copy, generate_card_background
-from utils.card_pdf_generator import generate_marketplace_card_pdf
-from utils.config import Settings
-from utils.logging_setup import setup_logging
-from utils.models import CardCopyData
+from src.ai import fetch_card_copy, generate_card_background
+from src.pdf import generate_marketplace_card_pdf
+from src.config import Settings
+from src.logging_setup import setup_logging
+from src.models import CardCopyData
 
 
 def _parse_args() -> argparse.Namespace:

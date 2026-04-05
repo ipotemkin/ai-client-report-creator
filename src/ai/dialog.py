@@ -1,13 +1,13 @@
-"""Асинхронная обработка транскрипта через OpenAI (ProxyAPI)."""
-
-import json
-from typing import Any
+"""Анализ транскрипта диалога → структура отчёта (JSON от модели)."""
 
 from loguru import logger
-from openai import AsyncOpenAI
 
-from utils.config import Settings
-from utils.models import ReportData
+from src.ai.common import (
+    chat_completion_json_object,
+    parse_json_to_model,
+)
+from src.config import Settings
+from src.models import ReportData
 
 _SYSTEM_PROMPT: str = (
     "Ты аналитик диалогов с клиентами. По транскрипту извлеки поля "
@@ -21,18 +21,6 @@ _SYSTEM_PROMPT: str = (
 )
 
 
-def _build_client(settings: Settings) -> AsyncOpenAI:
-    return AsyncOpenAI(
-        api_key=settings.proxyapi_api_key,
-        base_url=settings.openai_base_url,
-    )
-
-
-def _parse_report_payload(raw: str) -> ReportData:
-    data: dict[str, Any] = json.loads(raw)
-    return ReportData.model_validate(data)
-
-
 async def process_dialog_with_ai(
     text: str,
     settings: Settings | None = None,
@@ -43,23 +31,13 @@ async def process_dialog_with_ai(
     cfg: Settings = settings or Settings()
     logger.info("Шаг: анализ диалога через ИИ (chat.completions)")
     logger.debug("Размер текста для модели: {} символов", len(text))
-    client: AsyncOpenAI = _build_client(cfg)
-    response = await client.chat.completions.create(
-        model=cfg.openai_model,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": text},
-        ],
+    raw_json: str = await chat_completion_json_object(
+        cfg,
+        _SYSTEM_PROMPT,
+        text,
     )
-    choice = response.choices[0]
-    content: str | None = choice.message.content
-    if not content:
-        msg: str = "Пустой ответ модели"
-        logger.error(msg)
-        raise ValueError(msg)
     logger.info("Ответ API получен, разбор JSON в ReportData")
-    report: ReportData = _parse_report_payload(content)
+    report: ReportData = parse_json_to_model(raw_json, ReportData)
     topic_short: str = report.topic
     if len(topic_short) > 50:
         topic_short = topic_short[:50] + "…"

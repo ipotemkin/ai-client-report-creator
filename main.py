@@ -11,11 +11,11 @@ from loguru import logger
 from openai import OpenAIError
 from pydantic import ValidationError
 
-from utils.ai_processor import process_dialog_with_ai
-from utils.config import Settings
-from utils.logging_setup import setup_logging
-from utils.models import ReportData
-from utils.pdf_generator import generate_report_pdf
+from src.ai import process_dialog_with_ai
+from src.config import Settings
+from src.logging_setup import setup_logging
+from src.models import ReportData
+from src.pdf import generate_report_pdf
 
 
 def _parse_args() -> argparse.Namespace:

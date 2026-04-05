@@ -68,14 +68,18 @@ PDF: `reports/card_YYYY-MM-DD_HH-MM.pdf`.
 │   ├── report_template.html
 │   └── card_template.html
 ├── reports/                # сюда пишутся PDF
-└── utils/
-    ├── config.py           # настройки из .env
-    ├── models.py           # Pydantic-модели
-    ├── ai_processor.py     # чат с моделью для отчёта
-    ├── pdf_generator.py    # отчёт → PDF
-    ├── card_ai.py          # текст карточки + генерация фона
-    ├── card_pdf_generator.py
-    └── logging_setup.py
+└── src/
+    ├── config.py
+    ├── models.py
+    ├── logging_setup.py
+    ├── ai/                 # OpenAI / ProxyAPI
+    │   ├── common.py       # клиент, JSON, chat → JSON
+    │   ├── dialog.py       # отчёт по транскрипту
+    │   └── card.py         # карточка: копирайт + картинка
+    └── pdf/                # WeasyPrint + Jinja2
+        ├── render.py
+        ├── report.py
+        └── card.py
 ```
 
 ## Логи

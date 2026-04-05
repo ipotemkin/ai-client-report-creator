@@ -6,15 +6,16 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
 from loguru import logger
-from weasyprint import HTML
+
+from src.pdf.render import (
+    directory_base_url,
+    jinja_env,
+    project_root,
+    write_pdf,
+)
 
 _TEMPLATE: str = "card_template.html"
-
-
-def _root() -> Path:
-    return Path(__file__).resolve().parent.parent
 
 
 def _card_filename(now: datetime) -> str:
@@ -40,10 +41,7 @@ def _render_html(
     background_image: str,
     templates_dir: Path,
 ) -> str:
-    env: Environment = Environment(
-        loader=FileSystemLoader(str(templates_dir)),
-        autoescape=select_autoescape(["html", "xml"]),
-    )
+    env = jinja_env(templates_dir)
     template = env.get_template(_TEMPLATE)
     return template.render(
         product_name=product_name,
@@ -51,18 +49,6 @@ def _render_html(
         description=description,
         background_image=background_image,
     )
-
-
-def _base_url_for_dir(directory: Path) -> str:
-    uri: str = directory.resolve().as_uri()
-    if not uri.endswith("/"):
-        return uri + "/"
-    return uri
-
-
-def _write_pdf(html_str: str, out: Path, base_url: str) -> None:
-    doc: HTML = HTML(string=html_str, base_url=base_url)
-    doc.write_pdf(target=str(out))
 
 
 async def generate_marketplace_card_pdf(
@@ -80,13 +66,13 @@ async def generate_marketplace_card_pdf(
     moment: datetime = at or datetime.now()
     reports_dir.mkdir(parents=True, exist_ok=True)
     out_path: Path = reports_dir / _card_filename(moment)
-    tpl_dir: Path = _root() / "templates"
+    tpl_dir: Path = project_root() / "templates"
     tmp_dir: Path = Path(tempfile.mkdtemp(prefix="card_pdf_"))
     bg_name: str = _background_filename(image_png)
     try:
         bg_path: Path = tmp_dir / bg_name
         bg_path.write_bytes(image_png)
-        base_url: str = _base_url_for_dir(tmp_dir)
+        base_url: str = directory_base_url(tmp_dir)
         logger.info(
             "Шаблон {}, фон: {}, base_url=диск",
             _TEMPLATE,
@@ -99,7 +85,7 @@ async def generate_marketplace_card_pdf(
             bg_name,
             tpl_dir,
         )
-        await asyncio.to_thread(_write_pdf, html_str, out_path, base_url)
+        await asyncio.to_thread(write_pdf, html_str, out_path, base_url)
     finally:
         shutil.rmtree(tmp_dir, ignore_errors=True)
     logger.info("PDF карточки записан: {}", out_path.resolve())
