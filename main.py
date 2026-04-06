@@ -43,6 +43,7 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Файл с транскрипцией (UTF-8). Без флага — stdin",
     )
+    p_report.set_defaults(handler=_pipeline_report)
     p_card: argparse.ArgumentParser = sub.add_parser(
         "card",
         help="PDF-карточка товара (ИИ-фон + название, цена, описание)",
@@ -59,6 +60,7 @@ def _build_parser() -> argparse.ArgumentParser:
         required=True,
         help="Цена (как на витрине, напр. «1 990 ₽»)",
     )
+    p_card.set_defaults(handler=_pipeline_card)
     return parser
 
 
@@ -138,10 +140,11 @@ async def _pipeline_card(args: argparse.Namespace) -> None:
 
 
 async def _run_async(args: argparse.Namespace) -> None:
-    if args.command == "report":
-        await _pipeline_report(args)
-    else:
-        await _pipeline_card(args)
+    handler = getattr(args, "handler", None)
+    if handler is None:
+        msg: str = f"Неизвестная команда: {args.command}"
+        raise ValueError(msg)
+    await handler(args)
 
 
 def _run_with_errors(args: argparse.Namespace) -> None:
