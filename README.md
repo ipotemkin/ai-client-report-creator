@@ -4,8 +4,10 @@
 
 ## Возможности
 
-1. **Отчёт по диалогу с клиентом** (`main.py`) — по транскрипту разговора модель извлекает структурированные поля (клиент, тема, тезисы, запрос, настроение, шаги) и собирает PDF из HTML-шаблона.
-2. **Карточка товара для маркетплейса** (`card.py`) — по названию и цене: текст для карточки и промпт фона задаёт **gpt-4o-mini**, фон рисует **gpt-image-1**, затем PDF с подложкой и текстом.
+1. **Отчёт по диалогу** (`main.py report`) — по транскрипту модель извлекает поля (клиент, тема, тезисы, запрос, настроение, шаги) и собирает PDF.
+2. **Карточка маркетплейса** (`main.py card`) — по названию и цене: **gpt-4o-mini** даёт текст и промпт фона, **gpt-image-1** рисует фон, затем PDF с подложкой и текстом.
+
+Один CLI: `main.py` с подкомандами `report` и `card`.
 
 ## Требования
 
@@ -31,28 +33,36 @@ pip install -r requirements.txt
 
 ## Использование
 
-### Отчёт по диалогу
+### Справка по командам
+
+```bash
+python main.py --help
+python main.py report --help
+python main.py card --help
+```
+
+### Отчёт по диалогу (`report`)
 
 Из файла:
 
 ```bash
-python main.py -i example_dialog.txt
+python main.py report -i example_dialog.txt
 ```
 
 Из stdin (после ввода текста нажмите **Ctrl+D** в терминале):
 
 ```bash
-python main.py < example_dialog.txt
+python main.py report < example_dialog.txt
 # или
-cat example_dialog.txt | python main.py
+cat example_dialog.txt | python main.py report
 ```
 
-Готовый PDF сохраняется в каталог `reports/` с именем вида `report_YYYY-MM-DD_HH-MM.pdf`.
+Готовый PDF: `reports/report_YYYY-MM-DD_HH-MM.pdf`.
 
-### Карточка маркетплейса
+### Карточка маркетплейса (`card`)
 
 ```bash
-python card.py -n "Название товара" -p "1 990 ₽"
+python main.py card -n "Название товара" -p "1 990 ₽"
 ```
 
 PDF: `reports/card_YYYY-MM-DD_HH-MM.pdf`.
@@ -60,8 +70,7 @@ PDF: `reports/card_YYYY-MM-DD_HH-MM.pdf`.
 ## Структура проекта
 
 ```
-├── main.py                 # CLI: отчёт по транскрипту
-├── card.py                 # CLI: карточка товара
+├── main.py                 # единый CLI (подкоманды report, card)
 ├── requirements.txt
 ├── .env                    # ключи (не коммитить)
 ├── templates/
