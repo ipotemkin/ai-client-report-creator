@@ -2,20 +2,17 @@
 
 import argparse
 import asyncio
-import json
 import sys
 from pathlib import Path
 
-from jinja2 import TemplateNotFound
 from loguru import logger
-from openai import OpenAIError
-from pydantic import ValidationError
 
 from src.ai import (
     fetch_card_copy,
     generate_card_background,
     process_dialog_with_ai,
 )
+from src.cli.errors import handle_known_error
 from src.config import Settings
 from src.logging_setup import setup_logging
 from src.models import CardCopyData, ReportData
@@ -152,37 +149,9 @@ def _run_with_errors(args: argparse.Namespace) -> None:
         asyncio.run(_run_async(args))
     except asyncio.CancelledError:
         raise
-    except FileNotFoundError as exc:
-        logger.error("Файл транскрипта не найден: {}", exc)
-        sys.exit(1)
-    except IsADirectoryError as exc:
-        logger.error("Указан путь к каталогу, нужен файл: {}", exc)
-        sys.exit(1)
-    except PermissionError as exc:
-        logger.error("Нет прав на чтение или запись: {}", exc)
-        sys.exit(1)
-    except UnicodeDecodeError as exc:
-        logger.error("Не удалось прочитать файл как UTF-8: {}", exc)
-        sys.exit(1)
-    except ValidationError as exc:
-        logger.error("Ошибка проверки данных: {}", exc)
-        sys.exit(1)
-    except json.JSONDecodeError as exc:
-        logger.error("Ответ модели не является валидным JSON: {}", exc)
-        sys.exit(1)
-    except OpenAIError:
-        logger.exception("Ошибка API (OpenAI / ProxyAPI)")
-        sys.exit(1)
-    except TemplateNotFound as exc:
-        logger.error("Шаблон HTML не найден: {}", exc)
-        sys.exit(1)
-    except ValueError as exc:
-        logger.error("{}", exc)
-        sys.exit(1)
-    except OSError as exc:
-        logger.error("Системная ошибка ввода-вывода: {}", exc)
-        sys.exit(1)
     except Exception as exc:
+        if handle_known_error(exc):
+            return
         logger.exception("Неожиданная ошибка: {}", exc)
         sys.exit(1)
 

@@ -24,6 +24,10 @@ pip install -r requirements.txt
 
 Создайте файл `.env` в корне проекта:
 
+```bash
+cp .env.example .env
+```
+
 | Переменная | Обязательно | Описание |
 |------------|-------------|----------|
 | `PROXYAPI_API_KEY` | да | Ключ API (ProxyAPI или другой совместимый провайдер) |
@@ -81,6 +85,8 @@ PDF: `reports/card_YYYY-MM-DD_HH-MM.pdf`.
     ├── config.py
     ├── models.py
     ├── logging_setup.py
+    ├── cli/                # общая CLI-обвязка
+    │   └── errors.py       # единая обработка ошибок
     ├── ai/                 # OpenAI / ProxyAPI
     │   ├── common.py       # клиент, JSON, chat → JSON
     │   ├── dialog.py       # отчёт по транскрипту
@@ -94,6 +100,16 @@ PDF: `reports/card_YYYY-MM-DD_HH-MM.pdf`.
 ## Логи
 
 Сообщения пишутся в **stderr** через **loguru** (уровень INFO). Для отладки: `LOGURU_LEVEL=DEBUG`.
+
+## Архитектурные принципы
+
+- **Разделение ответственности (SRP):**  
+  `src/ai` отвечает только за работу с моделями,  
+  `src/pdf` — только за рендер HTML→PDF,  
+  `src/cli` — за поведение CLI и обработку ошибок.
+- **DRY:** общие функции вынесены в `src/ai/common.py` и `src/pdf/render.py`.
+- **Явные границы:** `main.py` оркестрирует сценарии (`report`, `card`), а бизнес-логика находится в пакетах `src/*`.
+- **Расширяемость:** новый сценарий проще добавить как новую подкоманду CLI + модуль в `src/ai` и/или `src/pdf`, не меняя существующие пайплайны.
 
 ## Ограничения
 
